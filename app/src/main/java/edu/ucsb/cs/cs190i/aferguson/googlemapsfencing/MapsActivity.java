@@ -12,9 +12,12 @@ import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
 import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -30,12 +33,13 @@ import org.json.JSONObject;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback, LocationListener {
+public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
 
     private GoogleMap mMap;
     private Location mCurrentLocation;
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION= 415;
     private Marker blueMarker;
+    private RequestQueue mRequestQueue;
 //    private LocationListener mLocationListener;
 
     @Override
@@ -93,25 +97,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getGPSLocation();
     }
 
-    @Override
-    public void onLocationChanged(Location location) {
-
-    }
-
-    @Override
-    public void onStatusChanged(String provider, int status, Bundle extras) {
-
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
-
-    }
+//    @Override
+//    public void onLocationChanged(Location location) {
+//
+//    }
+//
+//    @Override
+//    public void onStatusChanged(String provider, int status, Bundle extras) {
+//
+//    }
+//
+//    @Override
+//    public void onProviderDisabled(String provider) {
+//
+//    }
+//
+//    @Override
+//    public void onProviderEnabled(String provider) {
+//
+//    }
 
 
     public void getGPSLocation(){
@@ -131,6 +135,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                                 mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint));
                                 blueMarker.setPosition(newPoint);
+
+                                loadNearbyPlaces(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                             }
                             public void onStatusChanged(String prov, int stat, Bundle b){}
                             public void onProviderEnabled(String provider) {}
@@ -187,16 +193,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     //http://stackoverflow.com/questions/9605913/how-to-parse-json-in-android
     //http://androidmastermind.blogspot.co.ke/2016/06/android-google-maps-with-nearyby-places.html
+    //https://developer.android.com/training/volley/requestqueue.html#network
 
     public void loadNearbyPlaces(double latitude, double longitude){
+        //web api key: AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw
+        //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location34.4140,-119.8489&radius=500&sensor=true&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc
+
         StringBuilder googlePlacesUrl =
                 new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
         googlePlacesUrl.append("location=").append(latitude).append(",").append(longitude);
         googlePlacesUrl.append("&radius=").append(5000);
         googlePlacesUrl.append("&sensor=true");
-        googlePlacesUrl.append("&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc");
+        googlePlacesUrl.append("&key=AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw");
 
-        JsonObjectRequest request = new JsonObjectRequest(googlePlacesUrl.toString(),
+        JsonObjectRequest request = new JsonObjectRequest //url, jsonreq, listener, error listener
+                (googlePlacesUrl.toString(), null,
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject result) {
@@ -206,13 +217,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     }
                 },
                 new Response.ErrorListener() {
-                    @Override                    public void onErrorResponse(VolleyError error) {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
                         Log.e("tag", "onErrorResponse: Error= " + error);
                         Log.e("tag", "onErrorResponse: Error= " + error.getMessage());
                     }
-                });
+                }
+        );
 
-        AppController.getInstance().addToRequestQueue(request);
+        if (mRequestQueue == null) {
+            mRequestQueue = Volley.newRequestQueue(getApplicationContext());
+            mRequestQueue.start();
+        }
+        mRequestQueue.add(request);
+
+        //AppController.getInstance().addToRequestQueue(request);
     }
 
     public void parseLocationResult(JSONObject result){
