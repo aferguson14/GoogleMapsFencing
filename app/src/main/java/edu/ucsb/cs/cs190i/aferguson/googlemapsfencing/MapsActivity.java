@@ -10,7 +10,11 @@ import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.widget.Toast;
 
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonObjectRequest;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -18,6 +22,10 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker;
@@ -174,6 +182,87 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             // other 'case' lines to check for other
             // permissions this app might request
+        }
+    }
+
+    //http://stackoverflow.com/questions/9605913/how-to-parse-json-in-android
+    //http://androidmastermind.blogspot.co.ke/2016/06/android-google-maps-with-nearyby-places.html
+
+    public void loadNearbyPlaces(double latitude, double longitude){
+        StringBuilder googlePlacesUrl =
+                new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
+        googlePlacesUrl.append("location=").append(latitude).append(",").append(longitude);
+        googlePlacesUrl.append("&radius=").append(5000);
+        googlePlacesUrl.append("&sensor=true");
+        googlePlacesUrl.append("&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc");
+
+        JsonObjectRequest request = new JsonObjectRequest(googlePlacesUrl.toString(),
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject result) {
+
+                        Log.i("tag", "onResponse: Result= " + result.toString());
+                        parseLocationResult(result);
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override                    public void onErrorResponse(VolleyError error) {
+                        Log.e("tag", "onErrorResponse: Error= " + error);
+                        Log.e("tag", "onErrorResponse: Error= " + error.getMessage());
+                    }
+                });
+
+        AppController.getInstance().addToRequestQueue(request);
+    }
+
+    public void parseLocationResult(JSONObject result){
+        String id, place_id, placeName = null, reference, icon, vicinity = null;
+        double latitude, longitude;
+
+        try {
+            JSONArray jsonArray = result.getJSONArray("results");
+
+            if (result.getString("status").equalsIgnoreCase("OK")) {
+
+                mMap.clear();
+
+                for (int i = 0; i < jsonArray.length(); i++) {
+                    JSONObject place = jsonArray.getJSONObject(i);
+
+                    id = place.getString("id");
+                    place_id = place.getString("place_id");
+                    if (!place.isNull("name")) {
+                        placeName = place.getString("name");
+                    }
+                    if (!place.isNull("vicinity")) {
+                        vicinity = place.getString("vicinity");
+                    }
+                    latitude = place.getJSONObject("geometry").getJSONObject("location")
+                            .getDouble("lat");
+                    longitude = place.getJSONObject("geometry").getJSONObject("location")
+                            .getDouble("lng");
+                    reference = place.getString("reference");
+                    icon = place.getString("icon");
+
+                    MarkerOptions markerOptions = new MarkerOptions();
+                    LatLng latLng = new LatLng(latitude, longitude);
+                    markerOptions.position(latLng);
+                    markerOptions.title(placeName + " : " + vicinity);
+
+                    mMap.addMarker(markerOptions);
+                }
+
+                Toast.makeText(getBaseContext(), jsonArray.length() + " Supermarkets found!",
+                        Toast.LENGTH_LONG).show();
+            } else if (result.getString("status").equalsIgnoreCase("ZERO_RESULTS")) {
+                Toast.makeText(getBaseContext(), "No Supermarket found in 5KM radius!!!",
+                        Toast.LENGTH_LONG).show();
+            }
+
+        } catch (JSONException e) {
+
+            e.printStackTrace();
+            Log.e("tag", "parseLocationResult: Error=" + e.getMessage());
         }
     }
 }
