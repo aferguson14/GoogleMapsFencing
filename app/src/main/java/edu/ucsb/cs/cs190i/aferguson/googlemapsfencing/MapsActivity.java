@@ -87,11 +87,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d("onLocationChanged", "inside onLocationChanged");
-        mCurrentLocation = location;
-        LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-        mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint));
-        blueMarker.setPosition(newPoint);
+
     }
 
     @Override
@@ -111,6 +107,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     public void getGPSLocation(){
+        Log.d("getGPSLocation", "inside getGPSLocation");
         LocationManager locationManager = (LocationManager) getSystemService(this.LOCATION_SERVICE);
         if (locationManager != null) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -120,7 +117,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,
                         new LocationListener() {
                             public void onLocationChanged(Location location) {
-// code to run when user's location changes
+                                // code to run when user's location changes
+                                Log.d("onLocationChanged", "inside onLocationChanged");
+                                mCurrentLocation = location;
+                                LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+                                mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint));
+                                blueMarker.setPosition(newPoint);
                             }
                             public void onStatusChanged(String prov, int stat, Bundle b){}
                             public void onProviderEnabled(String provider) {}
