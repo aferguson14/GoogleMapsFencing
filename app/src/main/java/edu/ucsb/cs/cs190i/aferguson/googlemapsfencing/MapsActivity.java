@@ -1,15 +1,18 @@
 package edu.ucsb.cs.cs190i.aferguson.googlemapsfencing;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.net.Uri;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
 
 import com.android.volley.Request;
@@ -33,13 +36,15 @@ import org.json.JSONObject;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.HUE_BLUE;
 import static com.google.android.gms.maps.model.BitmapDescriptorFactory.defaultMarker;
 
-public class MapsActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMapLoadedCallback {
+public class MapsActivity extends FragmentActivity implements
+        OnMapReadyCallback, GoogleMap.OnMapLoadedCallback, GoogleMap.OnInfoWindowClickListener {
 
     private GoogleMap mMap;
     private Location mCurrentLocation;
     private static final int MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION= 415;
     private Marker blueMarker;
     private RequestQueue mRequestQueue;
+//    private String detailsUrl;
 //    private LocationListener mLocationListener;
 
     @Override
@@ -73,6 +78,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED ) {
             mMap.setMyLocationEnabled(true);
+            mMap.setInfoWindowAdapter(new GoogleMap.InfoWindowAdapter() {
+                @Override
+                public View getInfoWindow(Marker marker) {
+                    return null;
+                }
+
+                @Override
+                public View getInfoContents(Marker marker) {
+                    return null;
+                }
+            });
+            mMap.setOnInfoWindowClickListener(this);
         } else {
             // Show rationale and request permission.
 
@@ -94,6 +111,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
 
+
+        loadNearbyPlaces(34.4140, -119.8489);
         getGPSLocation();
     }
 
@@ -135,8 +154,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                                 LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                                 mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint));
                                 blueMarker.setPosition(newPoint);
-
-                                loadNearbyPlaces(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                             }
                             public void onStatusChanged(String prov, int stat, Bundle b){}
                             public void onProviderEnabled(String provider) {}
@@ -196,7 +213,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     //https://developer.android.com/training/volley/requestqueue.html#network
 
     public void loadNearbyPlaces(double latitude, double longitude){
-        //web api key: AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw
+        //places web api key: AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw
         //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location34.4140,-119.8489&radius=500&sensor=true&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc
 
         StringBuilder googlePlacesUrl =
@@ -204,7 +221,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         googlePlacesUrl.append("location=").append(latitude).append(",").append(longitude);
         googlePlacesUrl.append("&radius=").append(500);
         googlePlacesUrl.append("&sensor=true");
-        googlePlacesUrl.append("&key=AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw");
+        googlePlacesUrl.append("&key=AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw"); //Places webAPI key
 
         JsonObjectRequest request = new JsonObjectRequest //url, jsonreq, listener, error listener
                 (googlePlacesUrl.toString(), null,
@@ -243,8 +260,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
             if (result.getString("status").equalsIgnoreCase("OK")) {
 
-                mMap.clear();
-
                 for (int i = 0; i < jsonArray.length(); i++) {
                     JSONObject place = jsonArray.getJSONObject(i);
 
@@ -267,15 +282,18 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     LatLng latLng = new LatLng(latitude, longitude);
                     markerOptions.position(latLng);
                     markerOptions.title(placeName + " : " + vicinity);
-
+                    markerOptions.snippet(place_id); //place_id to get details
                     mMap.addMarker(markerOptions);
+
+                    //try to start intent from clicking the title (need to store place_id in marker)
+
                 }
 
-                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
-                        Toast.LENGTH_LONG).show();
+//                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
+//                        Toast.LENGTH_SHORT).show();
             } else if (result.getString("status").equalsIgnoreCase("ZERO_RESULTS")) {
-                Toast.makeText(getBaseContext(), "No POI in 500m radius",
-                        Toast.LENGTH_LONG).show();
+//                Toast.makeText(getBaseContext(), "No POI in 500m radius",
+//                        Toast.LENGTH_SHORT).show();
             }
 
         } catch (JSONException e) {
@@ -283,5 +301,79 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             e.printStackTrace();
             Log.e("tag", "parseLocationResult: Error=" + e.getMessage());
         }
+    }
+
+    public void getPlaceDetails(String place_id){
+        Log.d("tag", "in getPlaceDetails");
+        Log.d("tag", "in getPlaceDetails PLACEID: " + place_id);
+        //places web api key: AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw
+        //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location34.4140,-119.8489&radius=500&sensor=true&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc
+        StringBuilder googleDetailsUrl =
+                new StringBuilder("https://maps.googleapis.com/maps/api/place/details/json?");
+        googleDetailsUrl.append("placeid=").append(place_id);
+        googleDetailsUrl.append("&key=AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw"); //Places webAPI key
+
+        JsonObjectRequest request = new JsonObjectRequest //url, jsonreq, listener, error listener
+                (googleDetailsUrl.toString(), null,
+                        new Response.Listener<JSONObject>() {
+                            @Override
+                            public void onResponse(JSONObject result) {
+
+                                Log.i("tag", "onResponse: Result= " + result.toString());
+                                parseDetailsResultUrl(result);
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                Log.e("tag", "onErrorResponse: Error= " + error);
+                                Log.e("tag", "onErrorResponse: Error= " + error.getMessage());
+                            }
+                        }
+                );
+
+        if (mRequestQueue == null) {
+            mRequestQueue = Volley.newRequestQueue(getApplicationContext());
+            mRequestQueue.start();
+        }
+        mRequestQueue.add(request);
+
+        //AppController.getInstance().addToRequestQueue(request);
+    }
+
+    public void parseDetailsResultUrl(JSONObject result){
+        Log.d("tag", "in parseDetailsResultUrl");
+        String url = null;
+        try {
+            if (result.getString("status").equalsIgnoreCase("OK")) {
+                JSONObject place = result.getJSONObject("result");
+
+                url = place.getString("url");
+                Log.d("tag", "in parseDetailsResultURL URL: " + url);
+                Intent browserIntent = new Intent(Intent.ACTION_VIEW);
+                browserIntent.setData(Uri.parse(url));
+                startActivity(browserIntent);
+                Log.d("tag", "in parseDetailsResultURL after browserIntent");
+
+//                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
+//                        Toast.LENGTH_SHORT).show();
+            } else if (result.getString("status").equalsIgnoreCase("ZERO_RESULTS")) {
+//                Toast.makeText(getBaseContext(), "No POI in 500m radius",
+//                        Toast.LENGTH_SHORT).show();
+            }
+
+        } catch (JSONException e) {
+
+            e.printStackTrace();
+            Log.e("tag", "parseDetailsResult: Error=" + e.getMessage());
+        }
+    }
+
+    //resource used: https://developers.google.com/maps/documentation/android-api/infowindows
+    @Override
+    public void onInfoWindowClick(Marker marker) {
+        Log.d("tag", "in onInfoWindowClick");
+        Log.d("tag", "in onInfoWindowClick SNIPPET: " + marker.getSnippet());
+        getPlaceDetails(marker.getSnippet()); //snippet contains place_id
     }
 }
