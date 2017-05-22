@@ -202,7 +202,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         StringBuilder googlePlacesUrl =
                 new StringBuilder("https://maps.googleapis.com/maps/api/place/nearbysearch/json?");
         googlePlacesUrl.append("location=").append(latitude).append(",").append(longitude);
-        googlePlacesUrl.append("&radius=").append(5000);
+        googlePlacesUrl.append("&radius=").append(500);
         googlePlacesUrl.append("&sensor=true");
         googlePlacesUrl.append("&key=AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw");
 
@@ -271,10 +271,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                     mMap.addMarker(markerOptions);
                 }
 
-                Toast.makeText(getBaseContext(), jsonArray.length() + " Supermarkets found!",
+                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
                         Toast.LENGTH_LONG).show();
             } else if (result.getString("status").equalsIgnoreCase("ZERO_RESULTS")) {
-                Toast.makeText(getBaseContext(), "No Supermarket found in 5KM radius!!!",
+                Toast.makeText(getBaseContext(), "No POI in 500m radius",
                         Toast.LENGTH_LONG).show();
             }
 
