@@ -73,7 +73,7 @@ public class MapsActivity extends FragmentActivity implements
     private GoogleApiClient mGoogleApiClient;
 
     private PendingIntent mGeofencePendingIntent;
-    private List<Geofence>	mGeofenceList =	new ArrayList<>();
+    private List<Geofence>	mGeofenceList;
     private static final int GEOFENCE_ADD_STATUS_CODE = 1001;
     private static final int GEOFENCE_REMOVE_STATUS_CODE = 1002;
 //    private String detailsUrl;
@@ -82,16 +82,18 @@ public class MapsActivity extends FragmentActivity implements
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        mGeofencePendingIntent = null;
+        mGeofenceList = new ArrayList<Geofence>();
+
+
         setContentView(R.layout.activity_maps);
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
 
-
-
-
-
+        loadNearbyPlaces(34.4140, -119.8489);
 
         //Google API client might not be needed if below snippet works
         // Create an instance of GoogleAPIClient.
@@ -102,9 +104,6 @@ public class MapsActivity extends FragmentActivity implements
                     .addApi(LocationServices.API)
                     .build();
         }
-
-
-
     }
 
     protected void onStart() {
@@ -156,8 +155,10 @@ public class MapsActivity extends FragmentActivity implements
                     MY_PERMISSIONS_REQUEST_ACCESS_FINE_LOCATION);
         }
 
-        loadNearbyPlaces(34.4140, -119.8489);
+//        loadNearbyPlaces(34.4140, -119.8489);
         //getGPSLocation();
+
+
 
     }
 
@@ -171,19 +172,29 @@ public class MapsActivity extends FragmentActivity implements
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
 
 
-        //loadNearbyPlaces(34.4140, -119.8489);
-        getGPSLocation();
-
-//        //not sure if check needed or if this should be moved
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED ) {
-            Log.d("onMapLoaded", "inside addGeofences");
+        try{
             LocationServices.GeofencingApi.addGeofences(
                     mGoogleApiClient,
                     getGeofencingRequest(),
                     getGeofencePendingIntent()
             ).setResultCallback(this);
+        }catch (SecurityException securityException){
+            Log.d("securityexception", securityException.toString());
         }
+
+        //loadNearbyPlaces(34.4140, -119.8489);
+        getGPSLocation();
+
+//        //not sure if check needed or if this should be moved
+//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+//                == PackageManager.PERMISSION_GRANTED ) {
+//            Log.d("onMapLoaded", "inside addGeofences");
+//            LocationServices.GeofencingApi.addGeofences(
+//                    mGoogleApiClient,
+//                    getGeofencingRequest(),
+//                    getGeofencePendingIntent()
+//            ).setResultCallback(this);
+//        }
     }
 
 //    @Override
@@ -219,7 +230,7 @@ public class MapsActivity extends FragmentActivity implements
                         new LocationListener() {
                             public void onLocationChanged(Location location) {
                                 // code to run when user's location changes
-                                Log.d("onLocationChanged", "inside onLocationChanged");
+//                                Log.d("onLocationChanged", "inside onLocationChanged");
                                 mCurrentLocation = location;
                                 LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
                                 //mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint)); //center camera on gps location
@@ -265,6 +276,7 @@ public class MapsActivity extends FragmentActivity implements
 //                    mMap.setMyLocationEnabled(true);
 
                     getGPSLocation();
+
                 } else {
 
                     // permission denied, boo! Disable the
@@ -356,7 +368,9 @@ public class MapsActivity extends FragmentActivity implements
                     mMap.addMarker(markerOptions);
 
                     //GEOFENCE
+                    Log.d("geofence", "adding geofence: " + place_id);
                     mGeofenceList.add(new Geofence.Builder()
+
 //	Set	the	request	ID	of	the	geofence.	This	is	a	string	to	identify	this
 //	geofence.	Assume	you	have	a	place	item	from	your	return	list
                         .setRequestId(place_id)
@@ -369,6 +383,7 @@ public class MapsActivity extends FragmentActivity implements
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
                           Geofence.GEOFENCE_TRANSITION_EXIT)
                     .build());
+                    Log.d("geofence", "geofence added: " + mGeofenceList.get(mGeofenceList.size()-1).getRequestId()); //req id should be placeid
                 }
 
 //                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
@@ -381,13 +396,13 @@ public class MapsActivity extends FragmentActivity implements
         } catch (JSONException e) {
 
             e.printStackTrace();
-            Log.e("tag", "parseLocationResult: Error=" + e.getMessage());
+//            Log.e("tag", "parseLocationResult: Error=" + e.getMessage());
         }
     }
 
     public void getPlaceDetails(String place_id){
-        Log.d("tag", "in getPlaceDetails");
-        Log.d("tag", "in getPlaceDetails PLACEID: " + place_id);
+//        Log.d("tag", "in getPlaceDetails");
+//        Log.d("tag", "in getPlaceDetails PLACEID: " + place_id);
         //places web api key: AIzaSyAJS41Gg_DyT85NX45QnAEvHvnI0t0jaqw
         //https://maps.googleapis.com/maps/api/place/nearbysearch/json?location34.4140,-119.8489&radius=500&sensor=true&key=AIzaSyBw2OqgbgyJcz2gYH4MvklFcEWVI59AVpc
         StringBuilder googleDetailsUrl =
@@ -462,143 +477,28 @@ public class MapsActivity extends FragmentActivity implements
     //GEOFENCING
 
     private GeofencingRequest getGeofencingRequest() {
-        Log.d("getGeofencingRequest", "inside getGeofencing request");
+        Log.d("geofence", "inside getGeofencing request");
         GeofencingRequest.Builder builder	= new
                 GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
         builder.addGeofences(mGeofenceList);
+        Log.d("geofence", "geofenceList size: " + mGeofenceList.size());
         return builder.build();
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        Log.d("GeofencePendingIntent", "inside getGeofencePendingIntent");
+        Log.d("geofence", "inside getGeofencePendingIntent");
 //	Reuse	the	PendingIntent if	we	already	have	it.
         if (mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
         }
-        Intent intent	= new Intent(this, GeofenceTransitionsIntentService.class);
+        Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
 //	We	use	FLAG_UPDATE_CURRENT	so	that	we	get	the	same
 //	pending	intent	back	when calling	addGeofences()	and
 //	removeGeofences().
+        Log.d("geofence", "flag update current: " + PendingIntent.FLAG_UPDATE_CURRENT);
         return PendingIntent.getService(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
-    }
-
-    public class GeofenceTransitionsIntentService extends IntentService {
-        public GeofenceTransitionsIntentService() {
-            // Use the TAG to name the worker thread.
-            super("GeofenceTransitionsIS");
-        }
-
-        @Override
-        public void onCreate() {
-            super.onCreate();
-        }
-
-        @Override
-        protected void onHandleIntent(@Nullable Intent intent) {
-            GeofencingEvent geofencingEvent = GeofencingEvent.fromIntent(intent);
-            if (geofencingEvent.hasError()) {
-                String errorMessage = GeofenceStatusCodes.getStatusCodeString(
-                        geofencingEvent.getErrorCode());
-                Log.e("tag", errorMessage);
-                return;
-            }
-            // Get the transition type.
-            int geofenceTransition = geofencingEvent.getGeofenceTransition();
-            // Test that the reported transition was of interest.
-            if (geofenceTransition == Geofence.GEOFENCE_TRANSITION_ENTER ||
-                    geofenceTransition == Geofence.GEOFENCE_TRANSITION_EXIT) {
-                // Get the geofences that were triggered. A single event
-                // can trigger multiple geofences.
-                List<Geofence> triggeringGeofences =
-                        geofencingEvent.getTriggeringGeofences();
-
-                // Get the transition details as a String.
-                String geofenceTransitionDetails = getGeofenceTransitionDetails(
-                        this,
-                        geofenceTransition,
-                        triggeringGeofences
-                );
-                // Send notification and log the transition details.
-                sendNotification(geofenceTransitionDetails);
-//              Log.i(TAG, geofenceTransitionDetails);
-            } else {
-                // Log the error.
-                // Log.e(TAG, getString(R.string.geofence_transition_invalid_type,geofenceTransition));
-            }
-
-        }
-    }
-
-    private String getGeofenceTransitionDetails(
-            Context context,
-            int geofenceTransition,
-            List<Geofence> triggeringGeofences) {
-
-        String geofenceTransitionString = getTransitionString(geofenceTransition);
-
-        // Get the Ids of each geofence that was triggered.
-        ArrayList triggeringGeofencesIdsList = new ArrayList();
-        for (Geofence geofence : triggeringGeofences) {
-            triggeringGeofencesIdsList.add(geofence.getRequestId());
-        }
-        String triggeringGeofencesIdsString = TextUtils.join(", ",  triggeringGeofencesIdsList);
-
-        return geofenceTransitionString + ": " + triggeringGeofencesIdsString;
-    }
-
-    private void sendNotification(String notificationDetails) {
-        // Create an explicit content Intent that starts the main Activity.
-        Intent notificationIntent = new Intent(getApplicationContext(), MapsActivity.class); //MainActivity.class
-
-        // Construct a task stack.
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-
-        // Add the main Activity to the task stack as the parent.
-        stackBuilder.addParentStack(this); //MainActivity.class
-
-        // Push the content Intent onto the stack.
-        stackBuilder.addNextIntent(notificationIntent);
-
-        // Get a PendingIntent containing the entire back stack.
-        PendingIntent notificationPendingIntent =
-                stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
-
-        // Get a notification builder that's compatible with platform versions >= 4
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
-
-        // Define the notification settings.
-        builder.setSmallIcon(android.R.drawable.ic_dialog_map)//dialog map ,set prioirty proiority high, set default
-                // In a real app, you may want to use a library like Volley
-                // to decode the Bitmap.
-                //.setLargeIcon(BitmapFactory.decodeResource(getResources(),
-                //        android.R.drawable.ic_launcher))
-                .setColor(Color.RED)
-                .setContentTitle(notificationDetails)
-                .setContentText("this is a notification")//getString(R.string.geofence_transition_notification_text))
-                .setContentIntent(notificationPendingIntent);
-
-        // Dismiss notification once the user touches it.
-        builder.setAutoCancel(true);
-
-        // Get an instance of the Notification manager
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        // Issue the notification
-        mNotificationManager.notify(0, builder.build());
-    }
-
-    private String getTransitionString(int transitionType) {
-        switch (transitionType) {
-            case Geofence.GEOFENCE_TRANSITION_ENTER:
-                return "Geofence transition: entered";//getString(R.string.geofence_transition_entered);
-            case Geofence.GEOFENCE_TRANSITION_EXIT:
-                return "Geofence transition: exited";//getString(R.string.geofence_transition_exited);
-            default:
-                return "Geofence transition unknonw";//getString(R.string.unknown_geofence_transition);
-        }
     }
 
         @Override
