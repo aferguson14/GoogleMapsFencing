@@ -44,6 +44,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -156,7 +157,7 @@ public class MapsActivity extends FragmentActivity implements
         }
 
 //        loadNearbyPlaces(34.4140, -119.8489);
-        //getGPSLocation();
+//        getGPSLocation();
 
 
 
@@ -166,10 +167,11 @@ public class MapsActivity extends FragmentActivity implements
     public void onMapLoaded(){
         // Add a marker on campus and move the camera
         LatLng campus = new LatLng(34.4140, -119.8489); //34.4140, -119.8489
-//        blueMarker = mMap.addMarker(new MarkerOptions().position(campus).title("UCSB"));
-//        blueMarker.setIcon(defaultMarker(HUE_BLUE));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
+        blueMarker = mMap.addMarker(new MarkerOptions().position(campus).title("UCSB"));
+        blueMarker.setIcon(defaultMarker(HUE_BLUE));
+        //mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+
 
 
         try{
@@ -184,6 +186,11 @@ public class MapsActivity extends FragmentActivity implements
 
         //loadNearbyPlaces(34.4140, -119.8489);
         getGPSLocation();
+        LatLng initialGPSPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+        mMap.moveCamera(CameraUpdateFactory.newLatLng(initialGPSPoint));
+        mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+
+
 
 //        //not sure if check needed or if this should be moved
 //        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -226,6 +233,7 @@ public class MapsActivity extends FragmentActivity implements
                     || checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
 
                 Location loc = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+                mCurrentLocation = loc;
                 locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0,
                         new LocationListener() {
                             public void onLocationChanged(Location location) {
@@ -233,8 +241,8 @@ public class MapsActivity extends FragmentActivity implements
 //                                Log.d("onLocationChanged", "inside onLocationChanged");
                                 mCurrentLocation = location;
                                 LatLng newPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-                                //mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint)); //center camera on gps location
-                                //blueMarker.setPosition(newPoint);
+//                                mMap.animateCamera(CameraUpdateFactory.newLatLng(newPoint)); //center camera on gps location
+                                blueMarker.setPosition(newPoint);
                             }
                             public void onStatusChanged(String prov, int stat, Bundle b){}
                             public void onProviderEnabled(String provider) {}
@@ -383,6 +391,9 @@ public class MapsActivity extends FragmentActivity implements
                         .setTransitionTypes(Geofence.GEOFENCE_TRANSITION_ENTER |
                           Geofence.GEOFENCE_TRANSITION_EXIT)
                     .build());
+                    CircleOptions geoFenceCircle = new CircleOptions();
+                    geoFenceCircle.center(latLng).radius(25).visible(true).strokeWidth(3);
+                    mMap.addCircle(geoFenceCircle);
                     Log.d("geofence", "geofence added: " + mGeofenceList.get(mGeofenceList.size()-1).getRequestId()); //req id should be placeid
                 }
 

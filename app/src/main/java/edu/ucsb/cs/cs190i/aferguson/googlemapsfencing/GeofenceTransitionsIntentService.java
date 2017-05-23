@@ -113,7 +113,7 @@ public class GeofenceTransitionsIntentService extends IntentService{
                 // to decode the Bitmap.
                 //.setLargeIcon(BitmapFactory.decodeResource(getResources(),
                 //        android.R.drawable.ic_launcher))
-                .setColor(Color.RED)
+                //.setColor(Color.RED)
                 .setContentTitle(notificationDetails)
                 .setContentText("this is a notification")//getString(R.string.geofence_transition_notification_text))
                 .setContentIntent(notificationPendingIntent);
@@ -133,9 +133,9 @@ public class GeofenceTransitionsIntentService extends IntentService{
     private String getTransitionString(int transitionType) {
         switch (transitionType) {
             case Geofence.GEOFENCE_TRANSITION_ENTER:
-                return "Geofence transition: entered";//getString(R.string.geofence_transition_entered);
+                return "Entered Point of Interest";//getString(R.string.geofence_transition_entered);
             case Geofence.GEOFENCE_TRANSITION_EXIT:
-                return "Geofence transition: exited";//getString(R.string.geofence_transition_exited);
+                return "Exited Point of Interest";//getString(R.string.geofence_transition_exited);
             default:
                 return "Geofence transition unknonw";//getString(R.string.unknown_geofence_transition);
         }
