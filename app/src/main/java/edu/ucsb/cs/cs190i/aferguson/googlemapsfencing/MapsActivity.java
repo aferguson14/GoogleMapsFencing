@@ -379,8 +379,12 @@ public class MapsActivity extends FragmentActivity implements
                     LatLng latLng = new LatLng(latitude, longitude);
                     markerOptions.position(latLng);
                     markerOptions.title(placeName + " : " + vicinity);
-                    markerOptions.snippet(place_id); //place_id to get details
-                    mMap.addMarker(markerOptions);
+//                    markerOptions.snippet(place_id); //place_id to get details
+
+                    Marker poi = mMap.addMarker(markerOptions);
+                    poi.setTag(place_id);
+
+//                    mMap.addMarker(markerOptions);
 
                     //GEOFENCE
                     Log.d("geofence", "adding geofence: " + place_id);
@@ -489,7 +493,8 @@ public class MapsActivity extends FragmentActivity implements
     public void onInfoWindowClick(Marker marker) {
         Log.d("tag", "in onInfoWindowClick");
         Log.d("tag", "in onInfoWindowClick SNIPPET: " + marker.getSnippet());
-        getPlaceDetails(marker.getSnippet()); //snippet contains place_id
+//        getPlaceDetails(marker.getSnippet()); //snippet contains place_id
+        getPlaceDetails(marker.getTag().toString());
     }
 
     //GEOFENCING
