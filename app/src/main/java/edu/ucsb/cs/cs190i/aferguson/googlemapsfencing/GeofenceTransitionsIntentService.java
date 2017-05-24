@@ -1,10 +1,12 @@
 package edu.ucsb.cs.cs190i.aferguson.googlemapsfencing;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -18,6 +20,9 @@ import com.google.android.gms.location.GeofencingEvent;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static android.app.Notification.VISIBILITY_PUBLIC;
+import static android.app.NotificationManager.IMPORTANCE_HIGH;
 
 /**
  * Created by Ferg on 5/23/17.
@@ -55,7 +60,7 @@ public class GeofenceTransitionsIntentService extends IntentService{
                     geofencingEvent.getTriggeringGeofences();
 
             // Get the transition details as a String.
-            String geofenceTransitionDetails = getGeofenceTransitionDetails(
+            List<String> geofenceTransitionDetails = getGeofenceTransitionDetails(
                     this,
                     geofenceTransition,
                     triggeringGeofences
@@ -70,12 +75,14 @@ public class GeofenceTransitionsIntentService extends IntentService{
 
     }
 
-    private String getGeofenceTransitionDetails(
+    private List<String> getGeofenceTransitionDetails(
             Context context,
             int geofenceTransition,
             List<Geofence> triggeringGeofences) {
 
+        List<String> transitionDetails = new ArrayList<>();
         String geofenceTransitionString = getTransitionString(geofenceTransition);
+        transitionDetails.add(geofenceTransitionString);
 
         // Get the Ids of each geofence that was triggered.
         ArrayList triggeringGeofencesIdsList = new ArrayList();
@@ -83,11 +90,12 @@ public class GeofenceTransitionsIntentService extends IntentService{
             triggeringGeofencesIdsList.add(geofence.getRequestId());
         }
         String triggeringGeofencesIdsString = TextUtils.join(", ",  triggeringGeofencesIdsList);
+        transitionDetails.add(triggeringGeofencesIdsString);
 
-        return geofenceTransitionString + ": " + triggeringGeofencesIdsString;
+        return transitionDetails;
     }
 
-    private void sendNotification(String notificationDetails) {
+    private void sendNotification(List <String> notificationDetails) {
         // Create an explicit content Intent that starts the main Activity.
         Intent notificationIntent = new Intent(getApplicationContext(), MapsActivity.class); //MainActivity.class
 
@@ -111,11 +119,13 @@ public class GeofenceTransitionsIntentService extends IntentService{
         builder.setSmallIcon(android.R.drawable.ic_dialog_map)//dialog map ,set prioirty proiority high, set default
                 // In a real app, you may want to use a library like Volley
                 // to decode the Bitmap.
-                //.setLargeIcon(BitmapFactory.decodeResource(getResources(),
+//                .setLargeIcon(BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_dialog_map))
                 //        android.R.drawable.ic_launcher))
                 //.setColor(Color.RED)
-                .setContentTitle(notificationDetails)
-                .setContentText("this is a notification")//getString(R.string.geofence_transition_notification_text))
+                .setContentTitle(notificationDetails.get(0))
+                .setContentText(notificationDetails.get(1))//getString(R.string.geofence_transition_notification_text))
+                .setVisibility(VISIBILITY_PUBLIC)
+                .setPriority(Notification.PRIORITY_HIGH)
                 .setContentIntent(notificationPendingIntent);
 
         // Dismiss notification once the user touches it.

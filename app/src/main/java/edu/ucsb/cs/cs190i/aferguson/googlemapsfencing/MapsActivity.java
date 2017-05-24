@@ -73,6 +73,8 @@ public class MapsActivity extends FragmentActivity implements
     private RequestQueue mRequestQueue;
     private GoogleApiClient mGoogleApiClient;
 
+    private LatLng initialGPSPoint;
+
     private PendingIntent mGeofencePendingIntent;
     private List<Geofence>	mGeofenceList;
     private static final int GEOFENCE_ADD_STATUS_CODE = 1001;
@@ -167,10 +169,12 @@ public class MapsActivity extends FragmentActivity implements
     public void onMapLoaded(){
         // Add a marker on campus and move the camera
         LatLng campus = new LatLng(34.4140, -119.8489); //34.4140, -119.8489
-        blueMarker = mMap.addMarker(new MarkerOptions().position(campus).title("UCSB"));
-        blueMarker.setIcon(defaultMarker(HUE_BLUE));
-        //mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
-        mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
+        if(mCurrentLocation==null) {
+            blueMarker = mMap.addMarker(new MarkerOptions().position(campus).title("UCSB"));
+            blueMarker.setIcon(defaultMarker(HUE_BLUE));
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
+        }
+//        mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
 
 
 
@@ -186,8 +190,11 @@ public class MapsActivity extends FragmentActivity implements
 
         //loadNearbyPlaces(34.4140, -119.8489);
         getGPSLocation();
-        LatLng initialGPSPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(initialGPSPoint));
+
+        if(mCurrentLocation!=null){
+            initialGPSPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            mMap.moveCamera(CameraUpdateFactory.newLatLng(initialGPSPoint));
+        }
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
 
 
@@ -381,7 +388,7 @@ public class MapsActivity extends FragmentActivity implements
 
 //	Set	the	request	ID	of	the	geofence.	This	is	a	string	to	identify	this
 //	geofence.	Assume	you	have	a	place	item	from	your	return	list
-                        .setRequestId(place_id)
+                        .setRequestId(placeName)
                         .setCircularRegion(
                             latitude,
                             longitude,
