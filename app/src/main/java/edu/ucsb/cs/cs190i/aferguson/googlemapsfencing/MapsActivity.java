@@ -98,7 +98,6 @@ public class MapsActivity extends FragmentActivity implements
 
         loadNearbyPlaces(34.4140, -119.8489);
 
-        //Google API client might not be needed if below snippet works
         // Create an instance of GoogleAPIClient.
         if (mGoogleApiClient == null) {
             mGoogleApiClient = new GoogleApiClient.Builder(this)
@@ -168,15 +167,14 @@ public class MapsActivity extends FragmentActivity implements
     @Override
     public void onMapLoaded(){
         // Add a marker on campus and move the camera
-        LatLng campus = new LatLng(34.4140, -119.8489); //34.4140, -119.8489
+        LatLng campus = new LatLng(34.4140, -119.8489); //campus
         if(mCurrentLocation==null) {
-            blueMarker = mMap.addMarker(new MarkerOptions().position(campus).title("UCSB"));
-            blueMarker.setIcon(defaultMarker(HUE_BLUE));
+            if(blueMarker==null) {
+                blueMarker = mMap.addMarker(new MarkerOptions().position(campus));
+                blueMarker.setIcon(defaultMarker(HUE_BLUE));
+            }
             mMap.moveCamera(CameraUpdateFactory.newLatLng(campus));
         }
-//        mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
-
-
 
         try{
             LocationServices.GeofencingApi.addGeofences(
@@ -193,47 +191,17 @@ public class MapsActivity extends FragmentActivity implements
 
         if(mCurrentLocation!=null){
             initialGPSPoint = new LatLng(mCurrentLocation.getLatitude(), mCurrentLocation.getLongitude());
+            blueMarker.setPosition(initialGPSPoint);
             mMap.moveCamera(CameraUpdateFactory.newLatLng(initialGPSPoint));
         }
         mMap.moveCamera(CameraUpdateFactory.zoomTo(17));
-
-
-
-//        //not sure if check needed or if this should be moved
-//        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-//                == PackageManager.PERMISSION_GRANTED ) {
-//            Log.d("onMapLoaded", "inside addGeofences");
-//            LocationServices.GeofencingApi.addGeofences(
-//                    mGoogleApiClient,
-//                    getGeofencingRequest(),
-//                    getGeofencePendingIntent()
-//            ).setResultCallback(this);
-//        }
     }
 
-//    @Override
-//    public void onLocationChanged(Location location) {
-//
-//    }
-//
-//    @Override
-//    public void onStatusChanged(String provider, int status, Bundle extras) {
-//
-//    }
-//
-//    @Override
-//    public void onProviderDisabled(String provider) {
-//
-//    }
-//
-//    @Override
-//    public void onProviderEnabled(String provider) {
-//
-//    }
+
 
 
     public void getGPSLocation(){
-        Log.d("getGPSLocation", "inside getGPSLocation");
+//        Log.d("getGPSLocation", "inside getGPSLocation");
         LocationManager locationManager = (LocationManager) getSystemService(this.LOCATION_SERVICE);
         if (locationManager != null) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
@@ -256,13 +224,12 @@ public class MapsActivity extends FragmentActivity implements
                             public void onProviderDisabled(String provider) {}
                         });
                 if (loc == null) {
-// fall back to network if GPS is not available
+                    // fall back to network if GPS is not available
                     loc = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
                 }
                 if (loc != null) {
                     double myLat = loc.getLatitude();
                     double myLng = loc.getLongitude();
-//            locationManager.addGpsStatusListener()
                 }
 
 
@@ -288,23 +255,17 @@ public class MapsActivity extends FragmentActivity implements
                         && grantResults[0] == PackageManager.PERMISSION_GRANTED
                         && permissions[0] == Manifest.permission.ACCESS_FINE_LOCATION) {
                     //permission granted
-//                    mMap.setMyLocationEnabled(true);
-
                     getGPSLocation();
 
                 } else {
-
-                    // permission denied, boo! Disable the
-                    // functionality that depends on this permission.
+                    //permission denied
                 }
                 return;
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
+    //resources used:
     //http://stackoverflow.com/questions/9605913/how-to-parse-json-in-android
     //http://androidmastermind.blogspot.co.ke/2016/06/android-google-maps-with-nearyby-places.html
     //https://developer.android.com/training/volley/requestqueue.html#network
@@ -344,8 +305,6 @@ public class MapsActivity extends FragmentActivity implements
             mRequestQueue.start();
         }
         mRequestQueue.add(request);
-
-        //AppController.getInstance().addToRequestQueue(request);
     }
 
     public void parseLocationResult(JSONObject result){
@@ -387,7 +346,7 @@ public class MapsActivity extends FragmentActivity implements
 //                    mMap.addMarker(markerOptions);
 
                     //GEOFENCE
-                    Log.d("geofence", "adding geofence: " + place_id);
+//                    Log.d("geofence", "adding geofence: " + place_id);
                     mGeofenceList.add(new Geofence.Builder()
 
 //	Set	the	request	ID	of	the	geofence.	This	is	a	string	to	identify	this
@@ -405,7 +364,7 @@ public class MapsActivity extends FragmentActivity implements
                     CircleOptions geoFenceCircle = new CircleOptions();
                     geoFenceCircle.center(latLng).radius(25).visible(true).strokeWidth(3);
                     mMap.addCircle(geoFenceCircle);
-                    Log.d("geofence", "geofence added: " + mGeofenceList.get(mGeofenceList.size()-1).getRequestId()); //req id should be placeid
+//                    Log.d("geofence", "geofence added: " + mGeofenceList.get(mGeofenceList.size()-1).getRequestId()); //req id should be placeid
                 }
 
 //                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
@@ -456,23 +415,21 @@ public class MapsActivity extends FragmentActivity implements
             mRequestQueue.start();
         }
         mRequestQueue.add(request);
-
-        //AppController.getInstance().addToRequestQueue(request);
     }
 
     public void parseDetailsResultUrl(JSONObject result){
-        Log.d("tag", "in parseDetailsResultUrl");
+//        Log.d("tag", "in parseDetailsResultUrl");
         String url = null;
         try {
             if (result.getString("status").equalsIgnoreCase("OK")) {
                 JSONObject place = result.getJSONObject("result");
 
                 url = place.getString("url");
-                Log.d("tag", "in parseDetailsResultURL URL: " + url);
+//                Log.d("tag", "in parseDetailsResultURL URL: " + url);
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW);
                 browserIntent.setData(Uri.parse(url));
                 startActivity(browserIntent);
-                Log.d("tag", "in parseDetailsResultURL after browserIntent");
+//                Log.d("tag", "in parseDetailsResultURL after browserIntent");
 
 //                Toast.makeText(getBaseContext(), jsonArray.length() + " POI found!",
 //                        Toast.LENGTH_SHORT).show();
@@ -491,35 +448,35 @@ public class MapsActivity extends FragmentActivity implements
     //resource used: https://developers.google.com/maps/documentation/android-api/infowindows
     @Override
     public void onInfoWindowClick(Marker marker) {
-        Log.d("tag", "in onInfoWindowClick");
-        Log.d("tag", "in onInfoWindowClick SNIPPET: " + marker.getSnippet());
+//        Log.d("tag", "in onInfoWindowClick");
+//        Log.d("tag", "in onInfoWindowClick SNIPPET: " + marker.getSnippet());
 //        getPlaceDetails(marker.getSnippet()); //snippet contains place_id
-        getPlaceDetails(marker.getTag().toString());
+        getPlaceDetails(marker.getTag().toString()); //tag contains place_id
     }
 
     //GEOFENCING
 
     private GeofencingRequest getGeofencingRequest() {
-        Log.d("geofence", "inside getGeofencing request");
+//        Log.d("geofence", "inside getGeofencing request");
         GeofencingRequest.Builder builder	= new
                 GeofencingRequest.Builder();
         builder.setInitialTrigger(GeofencingRequest.INITIAL_TRIGGER_ENTER);
         builder.addGeofences(mGeofenceList);
-        Log.d("geofence", "geofenceList size: " + mGeofenceList.size());
+//        Log.d("geofence", "geofenceList size: " + mGeofenceList.size());
         return builder.build();
     }
 
     private PendingIntent getGeofencePendingIntent() {
-        Log.d("geofence", "inside getGeofencePendingIntent");
-//	Reuse	the	PendingIntent if	we	already	have	it.
+//        Log.d("geofence", "inside getGeofencePendingIntent");
+        //	Reuse	the	PendingIntent if	we	already	have	it.
         if (mGeofencePendingIntent != null) {
             return mGeofencePendingIntent;
         }
         Intent intent = new Intent(this, GeofenceTransitionsIntentService.class);
-//	We	use	FLAG_UPDATE_CURRENT	so	that	we	get	the	same
-//	pending	intent	back	when calling	addGeofences()	and
-//	removeGeofences().
-        Log.d("geofence", "flag update current: " + PendingIntent.FLAG_UPDATE_CURRENT);
+        //	We	use	FLAG_UPDATE_CURRENT	so	that	we	get	the	same
+        //	pending	intent	back	when calling	addGeofences()	and
+        //	removeGeofences().
+//        Log.d("geofence", "flag update current: " + PendingIntent.FLAG_UPDATE_CURRENT);
         return PendingIntent.getService(this, 0, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
     }

@@ -28,7 +28,10 @@ import static android.app.NotificationManager.IMPORTANCE_HIGH;
 
 /**
  * Created by Ferg on 5/23/17.
+ * CREDIT TO GOOGLE
  */
+
+
 //Resource used (following sample): https://raw.githubusercontent.com/googlesamples/android-play-location/master/Geofencing/app/src/main/java/com/google/android/gms/location/sample/geofencing/GeofenceTransitionsIntentService.java
 public class GeofenceTransitionsIntentService extends IntentService{
 
@@ -48,7 +51,7 @@ public class GeofenceTransitionsIntentService extends IntentService{
         if (geofencingEvent.hasError()) {
             String errorMessage = GeofenceStatusCodes.getStatusCodeString(
                     geofencingEvent.getErrorCode());
-            Log.e("tag", errorMessage);
+//            Log.e("tag", errorMessage);
             return;
         }
         // Get the transition type.
@@ -144,7 +147,7 @@ public class GeofenceTransitionsIntentService extends IntentService{
 
         // Issue the notification
         mNotificationManager.notify(0, builder.build());
-        Log.d("geofence", "notifcation issued");
+//        Log.d("geofence", "notifcation issued");
     }
 
     private String getTransitionString(int transitionType) {
@@ -154,7 +157,7 @@ public class GeofenceTransitionsIntentService extends IntentService{
             case Geofence.GEOFENCE_TRANSITION_EXIT:
                 return "Exited Point of Interest";//getString(R.string.geofence_transition_exited);
             default:
-                return "Geofence transition unknonw";//getString(R.string.unknown_geofence_transition);
+                return "Geofence transition unknown ";//getString(R.string.unknown_geofence_transition);
         }
     }
 
