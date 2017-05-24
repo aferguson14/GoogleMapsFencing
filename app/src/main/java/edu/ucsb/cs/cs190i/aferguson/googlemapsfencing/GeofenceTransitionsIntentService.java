@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.media.RingtoneManager;
+import android.net.Uri;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -116,6 +118,9 @@ public class GeofenceTransitionsIntentService extends IntentService{
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
 
         // Define the notification settings.
+        //resource used: https://stackoverflow.com/questions/11271991/uri-to-default-sound-notification
+        //resource used: https://developer.android.com/guide/topics/ui/notifiers/notifications.html
+        Uri soundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         builder.setSmallIcon(android.R.drawable.ic_dialog_map)//dialog map ,set prioirty proiority high, set default
                 // In a real app, you may want to use a library like Volley
                 // to decode the Bitmap.
@@ -126,6 +131,8 @@ public class GeofenceTransitionsIntentService extends IntentService{
                 .setContentText(notificationDetails.get(1))//getString(R.string.geofence_transition_notification_text))
                 .setVisibility(VISIBILITY_PUBLIC)
                 .setPriority(Notification.PRIORITY_HIGH)
+
+                .setSound(soundUri)
                 .setContentIntent(notificationPendingIntent);
 
         // Dismiss notification once the user touches it.
